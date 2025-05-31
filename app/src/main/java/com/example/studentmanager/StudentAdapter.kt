@@ -8,8 +8,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class StudentAdapter(private val students: MutableList<Student>) :
-    RecyclerView.Adapter<StudentAdapter.ViewHolder>() {
+class StudentAdapter(
+    private val students: MutableList<Student>,
+    private val dbHelper: StudentDatabaseHelper
+) : RecyclerView.Adapter<StudentAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val hoTen: TextView = itemView.findViewById(R.id.hoTen)
@@ -29,6 +31,8 @@ class StudentAdapter(private val students: MutableList<Student>) :
         holder.mssv.text = student.mssv
 
         holder.btnDelete.setOnClickListener {
+            val studentToRemove = students[position]
+            dbHelper.deleteStudentByMssv(studentToRemove.mssv)
             students.removeAt(position)
             notifyItemRemoved(position)
             notifyItemRangeChanged(position, students.size)

@@ -10,16 +10,17 @@ import androidx.recyclerview.widget.RecyclerView
 
 class StudentActivity : AppCompatActivity() {
     private var studentList = mutableListOf<Student>()
+    private lateinit var dbHelper :StudentDatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.student_list)
 
-        studentList.add(Student("Nguyen Manh Cuong","20225268"))
-        studentList.add(Student("Dong Van The","20225408"))
-        studentList.add(Student("Le Hong Anh","20225268"))
+        dbHelper = StudentDatabaseHelper(this)
 
-        val adapter = StudentAdapter(studentList)
+        studentList = dbHelper.getAllStudents().toMutableList()
+
+        val adapter = StudentAdapter(studentList,dbHelper)
         val recyclerView =findViewById<RecyclerView>(R.id.recycleview_stu)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -32,11 +33,17 @@ class StudentActivity : AppCompatActivity() {
             val mssv = editMssv.text.toString()
 
             if(name.isNotEmpty() && mssv.isNotEmpty()){
-                studentList.add(Student(name,mssv))
+                val newStudent = Student(0,name,mssv)
+                dbHelper.insertStudent(name,mssv)
+
+                studentList.add(newStudent)
                 adapter.notifyItemInserted(studentList.size-1)
 
+                editMssv.text.clear()
+                editHoten.text.clear()
             }
         }
+        dbHelper.logAllStudents()
 
 
 
