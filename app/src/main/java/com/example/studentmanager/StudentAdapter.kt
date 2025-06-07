@@ -7,10 +7,13 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 class StudentAdapter(
     private val students: MutableList<Student>,
-    private val dbHelper: StudentDatabaseHelper
+//    private val dbHelper: StudentDatabaseHelper
+    private var studentDAO : StudentDAO
 ) : RecyclerView.Adapter<StudentAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -32,7 +35,10 @@ class StudentAdapter(
 
         holder.btnDelete.setOnClickListener {
             val studentToRemove = students[position]
-            dbHelper.deleteStudentByMssv(studentToRemove.mssv)
+//            dbHelper.deleteStudentByMssv(studentToRemove.mssv)
+            Executors.newSingleThreadExecutor().execute {
+                studentDAO.deleteByMssv(studentToRemove.mssv)
+            }
             students.removeAt(position)
             notifyItemRemoved(position)
             notifyItemRangeChanged(position, students.size)

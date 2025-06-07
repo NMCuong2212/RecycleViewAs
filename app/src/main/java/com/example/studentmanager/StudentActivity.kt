@@ -7,47 +7,63 @@ import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.Executors
 
 class StudentActivity : AppCompatActivity() {
     private var studentList = mutableListOf<Student>()
-    private lateinit var dbHelper :StudentDatabaseHelper
+//    private lateinit var dbHelper :StudentDatabaseHelper
+    private lateinit var studentDAO: StudentDAO
+    private lateinit var adapter: StudentAdapter
+
+    private val executor = Executors.newSingleThreadExecutor()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.student_list)
 
-        dbHelper = StudentDatabaseHelper(this)
+        studentDAO = StudentDatabase.getInstance(applicationContext).studentDAO()
 
-        studentList = dbHelper.getAllStudents().toMutableList()
+        // Tạo adapter với list rỗng lúc đầu
+        adapter = StudentAdapter(studentList, studentDAO)
 
-        val adapter = StudentAdapter(studentList,dbHelper)
-        val recyclerView =findViewById<RecyclerView>(R.id.recycleview_stu)
+        val recyclerView = findViewById<RecyclerView>(R.id.recycleview_stu)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
         val editHoten = findViewById<EditText>(R.id.edit_hoten)
         val editMssv = findViewById<EditText>(R.id.edit_mssv)
 
-        findViewById<Button>(R.id.btn_add).setOnClickListener{
+        // Load dữ liệu Room trong background thread
+        executor.execute {
+            val data = studentDAO.getAll()
+            runOnUiThread {
+                studentList.clear()
+                studentList.addAll(data)
+                adapter.notifyDataSetChanged()
+            }
+        }
+
+        findViewById<Button>(R.id.btn_add).setOnClickListener {
             val name = editHoten.text.toString()
             val mssv = editMssv.text.toString()
 
-            if(name.isNotEmpty() && mssv.isNotEmpty()){
-                val newStudent = Student(0,name,mssv)
-                dbHelper.insertStudent(name,mssv)
+            if (name.isNotEmpty() && mssv.isNotEmpty()) {
+                executor.execute {
+                    val student = Student(hoTen = name, mssv = mssv)
+                    studentDAO.insert(student)
 
-                studentList.add(newStudent)
-                adapter.notifyItemInserted(studentList.size-1)
-
-                editMssv.text.clear()
-                editHoten.text.clear()
+                    val updatedList = studentDAO.getAll()
+                    runOnUiThread {
+                        studentList.clear()
+                        studentList.addAll(updatedList)
+                        adapter.notifyDataSetChanged()
+                    }
+                }
             }
         }
-        dbHelper.logAllStudents()
+    }
 
-
-
-        }
 
 
 }
